@@ -7,7 +7,7 @@ import (
 )
 
 func(s *IntentStore) StartExecutor() {   // This function starts a background goroutine and has ticker for checking every 3 seconds.
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 	go func() {
 		for range ticker.C {
 			log.Println("Executing intents...")
@@ -15,7 +15,7 @@ func(s *IntentStore) StartExecutor() {   // This function starts a background go
 		}
 	}()
 }
-//scan filter and execute 
+//scan filter and execute
 func (s *IntentStore) executeReadyIntents() {   //This part says "Do not reveal your secrets to strangers" but in code form
 	s.mu.Lock()
 	defer s.mu.Unlock()      //Lock your doors!!
@@ -28,6 +28,7 @@ func (s *IntentStore) executeReadyIntents() {   //This part says "Do not reveal 
 			log.Printf("Executing intent ID: %s, Action: %s, Amount: %f\n", intent.ID, intent.Action, intent.Amount) //simulated execution by logging
 			executedTime := time.Now()  // Updated intent status and executed time
 			intent.Status = "EXECUTED"
+			s.lastCheckedAt = time.Now()
 			intent.ExecutedAt = &executedTime
 			s.intents[id] = intent       //Its the matter of figure☆*: .｡. o(≧▽≦), I mean values update in the store.
 		}
