@@ -1,13 +1,13 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"net/http"
-	"time"
-	"RepLen-backend/internal/store"
-	"RepLen-backend/internal/intent"
+"encoding/json"
+"fmt"
+"log"
+"net/http"
+"time"
+"github.com/Tanya0816/RepLen/RepLen-backend/internal/store"
+"github.com/Tanya0816/RepLen/RepLen-backend/internal/intent"
 )
 var intentStore *store.IntentStore
 func main() {
@@ -15,7 +15,9 @@ func main() {
 	http.HandleFunc("/health",healthHandler)
     http.HandleFunc("/intent", createIntentHandler)    // POST /intent
     http.HandleFunc("/intents", listIntentsHandler)  // GET /intents
+	http.HandleFunc("/executor/status", executorStatusHandler)
 
+    intentStore.StartExecutor() // Start the background executor to process intents
 	log.Println("Server is running on port 3000") 
 	log.Fatal(http.ListenAndServe(":3000", nil))
 }
@@ -51,8 +53,9 @@ func createIntentHandler(w http.ResponseWriter, r *http.Request) {    // post /i
 		PoolID:    req.PoolID,
 		Action:    intent.ActionType(req.Action),
 		Amount:    req.Amount,
+		Status:    intent.StatusPending,
 		CreatedAt: now,
-		ExecutedAt: now.Add(time.Duration(req.DelaySec) * time.Second),
+		ExecuteAt: now.Add(time.Duration(req.DelaySec) * time.Second),  // set execute time based on delay
 	}
 
 	intentStore.Add(i)
@@ -69,3 +72,14 @@ func listIntentsHandler(w http.ResponseWriter, r *http.Request) {   // GET /inte
 	intents := intentStore.GetAll()
 	json.NewEncoder(w).Encode(intents)
 }
+
+func executorStatusHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	status := intentStore.ExecutorStatus()
+	json.NewEncoder(w).Encode(status)
+}
+

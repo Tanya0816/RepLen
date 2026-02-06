@@ -19,6 +19,8 @@ type LenIntent struct {
 	Address   string
 	PoolID    string
 	Amount	float64
+	Status    intentStatus
 	CreatedAt time.Time      // when the intent was created
-	ExecutedAt time.Time    //when the intent was executed
+	ExecuteAt time.Time    //when the intent was executed
+	ExecutedAt *time.Time	 // when the intent was executed, nil if not executed yet
 }
