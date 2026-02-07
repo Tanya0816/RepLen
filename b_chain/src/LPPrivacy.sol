@@ -21,6 +21,9 @@ contract LPPrivacy is IHooks{
         address lp;
         PoolKey poolKey;
         actionType action;
+        int24 tickLower; 
+        int24 tickUpper;
+        int128 liquidityDelta;
         uint256 queueBlock;
         uint256 executeAfterBlock;
         bool isExecuted;
@@ -30,12 +33,16 @@ contract LPPrivacy is IHooks{
 
     uint256 intentid = 0;
 
+    intent[intentid].tickLower = params.tickLower;
+    intent[intentid].tickUpper = params.tickUpper;
+    intent[intentid].liquidityDelta = params.liquidityDelta;
+
      function beforeAddLiquidity(
         address sender,
         PoolKey calldata key,
-        ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external returns (bytes4) {
+        require( msg.sender == address(poolManager),"You can't proceed");
         LiquidityIntent memory _liquidityIntent ;
         PoolKey poolkey = key;
         _liquidityIntent.lp = sender;
@@ -45,9 +52,9 @@ contract LPPrivacy is IHooks{
         _liquidityIntent.executeAfterBlock = _liquidityIntent.queueBlock + delay_block;
         _liquidityIntent.isExecuted = false;
         intent[intentid] =  _liquidityIntent;
-        intentid += 1;
         emit queuedIntent(intentid);
-        return this.beforeAddLiquidity.selector();
+        intentid += 1;
+        return this.beforeAddLiquidity.selector;
     }
 
      function beforeRemoveLiquidity(
@@ -56,11 +63,36 @@ contract LPPrivacy is IHooks{
         ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external returns (bytes4) {
+         LiquidityIntent memory _liquidityIntent ;
+        PoolKey poolkey = key;
+        _liquidityIntent.lp = sender;
+        _liquidityIntent.poolKey = poolkey;
+        _liquidityIntent.action = actionType.Remove;
+        _liquidityIntent.queueBlock = block.number;
+        _liquidityIntent.executeAfterBlock = _liquidityIntent.queueBlock + delay_block;
+        _liquidityIntent.isExecuted = false;
+        intent[intentid] =  _liquidityIntent;
+        emit queuedIntent(intentid);
+        intentid += 1;
+        return this.beforeRemoveLiquidity.selector;
 
     }
 
     function executeIntent(uint256 intentId) public {
-        
-
+        if (intentId >= intentid) {
+            revert();
+        }
+        if (intent[intentId].isExecuted == true) {
+            revert();
+        }
+        uint256 current_block = block.number;
+        if(current_block < intent[intentId].executeAfterBlock) {
+            revert();
+        }
+       
+        if (current_block >= intent[intentId].executeAfterBlock) {
+            intent[intentId].isExecuted = true;
+        }
+        emit executedIntent(intentId);
     }
 }
