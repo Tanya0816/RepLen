@@ -17,6 +17,8 @@ contract LPPrivacy is IHooks{
             Add, Remove
         };
 
+    bytes hookData;
+
     struct LiquidityIntent {
         address lp;
         PoolKey poolKey;
@@ -33,13 +35,10 @@ contract LPPrivacy is IHooks{
 
     uint256 intentid = 0;
 
-    intent[intentid].tickLower = params.tickLower;
-    intent[intentid].tickUpper = params.tickUpper;
-    intent[intentid].liquidityDelta = params.liquidityDelta;
-
      function beforeAddLiquidity(
         address sender,
         PoolKey calldata key,
+        ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external returns (bytes4) {
         require( msg.sender == address(poolManager),"You can't proceed");
@@ -52,6 +51,9 @@ contract LPPrivacy is IHooks{
         _liquidityIntent.executeAfterBlock = _liquidityIntent.queueBlock + delay_block;
         _liquidityIntent.isExecuted = false;
         intent[intentid] =  _liquidityIntent;
+        intent[intentid].tickLower = params.tickLower;
+        intent[intentid].tickUpper = params.tickUpper;
+        intent[intentid].liquidityDelta = params.liquidityDelta;
         emit queuedIntent(intentid);
         intentid += 1;
         return this.beforeAddLiquidity.selector;
@@ -72,6 +74,9 @@ contract LPPrivacy is IHooks{
         _liquidityIntent.executeAfterBlock = _liquidityIntent.queueBlock + delay_block;
         _liquidityIntent.isExecuted = false;
         intent[intentid] =  _liquidityIntent;
+        intent[intentid].tickLower = params.tickLower;
+        intent[intentid].tickUpper = params.tickUpper;
+        intent[intentid].liquidityDelta = params.liquidityDelta;
         emit queuedIntent(intentid);
         intentid += 1;
         return this.beforeRemoveLiquidity.selector;
@@ -89,10 +94,22 @@ contract LPPrivacy is IHooks{
         if(current_block < intent[intentId].executeAfterBlock) {
             revert();
         }
-       
+        ModifyLiquidityParams tParams;
+        int24 tLower = intent[intentId].tickLower;
+        int24 tUpper = intent[intentId].tickUpper;
+        int128 lDelta = intent[intentId].liquidityDelta;
+        tParams.tickLower = tLower;
+        tParams.tickUpper = tUpper;
+        tParams.liquidityDelta = lDelta;
+        if (poolManager.modifyLiquidity(intent[intentId].poolKey, tParams, hookData)) {
+
+        } else {
+            revert();
+        }
         if (current_block >= intent[intentId].executeAfterBlock) {
             intent[intentId].isExecuted = true;
         }
+
         emit executedIntent(intentId);
     }
 }
