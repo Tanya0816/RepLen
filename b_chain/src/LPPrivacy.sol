@@ -17,8 +17,6 @@ contract LPPrivacy is IHooks{
             Add, Remove
         };
 
-    bytes hookData = 0;
-
     struct LiquidityIntent {
         address lp;
         PoolKey poolKey;
@@ -46,9 +44,9 @@ contract LPPrivacy is IHooks{
         require( msg.sender == address(poolManager),"You can't proceed");
 
         LiquidityIntent memory _liquidityIntent ;
-        PoolKey poolkey = key;
+       
         _liquidityIntent.lp = sender;
-        _liquidityIntent.poolKey = poolkey;
+        _liquidityIntent.poolKey = key;
         _liquidityIntent.action = actionType.Add;
         _liquidityIntent.queueBlock = block.number;
         _liquidityIntent.executeAfterBlock = _liquidityIntent.queueBlock + delay_block;
@@ -69,9 +67,9 @@ contract LPPrivacy is IHooks{
         bytes calldata hookData
     ) external returns (bytes4) {
          LiquidityIntent memory _liquidityIntent ;
-        PoolKey poolkey = key;
+       
         _liquidityIntent.lp = sender;
-        _liquidityIntent.poolKey = poolkey;
+        _liquidityIntent.poolKey = key;
         _liquidityIntent.action = actionType.Remove;
         _liquidityIntent.queueBlock = block.number;
         _liquidityIntent.executeAfterBlock = _liquidityIntent.queueBlock + delay_block;
@@ -87,7 +85,7 @@ contract LPPrivacy is IHooks{
     }
 
     function queueIntentForFee(uint256 fees, uint256 intentId) public payable  {
-        require(fees <= msg.value);
+        require(msg.value >= fees);
         intentFee[intentId] = fees;
 
     }
@@ -106,6 +104,9 @@ contract LPPrivacy is IHooks{
         if(current_block < intent[intentId].executeAfterBlock) {
             revert();
         }
+
+        bytes hookData;
+
         ModifyLiquidityParams tParams;
         int24 tLower = intent[intentId].tickLower;
         int24 tUpper = intent[intentId].tickUpper;
@@ -113,6 +114,7 @@ contract LPPrivacy is IHooks{
         tParams.tickLower = tLower;
         tParams.tickUpper = tUpper;
         tParams.liquidityDelta = lDelta;
+
         if (intent[intentId].action == Add) {
             if (lDelta <= 0) {
                 revert();
@@ -130,10 +132,74 @@ contract LPPrivacy is IHooks{
         poolManager.modifyLiquidity(intent[intentId].poolKey, tParams, hookData);
 
         emit executedIntent(intentId);
-        if (current_block >= intent[intentId].executeAfterBlock) {
-            intent[intentId].isExecuted = true;
-        }
         
-        intentFee[intentId] = 0;
     }
+
+
+     function afterAddLiquidity(
+        address sender,
+        PoolKey calldata key,
+        ModifyLiquidityParams calldata params,
+        BalanceDelta delta,
+        BalanceDelta feesAccrued,
+        bytes calldata hookData
+    ) external returns (bytes4, BalanceDelta) {
+
+         require(msg.sender == poolManager);
+        (address executerAddress, address LPAddress, uint256 intentId) = abi.decode(hookData,(address, address, uint256));
+        LiquidityIntent storage intentt = intent[intentId];
+        require(intentt.isExecuted == false);
+        address token0 = delta;
+        address token1 = feesAccrued;
+
+        if (token1 < 0) {
+            token1 = 
+        }
+
+        if (token0 > 0) {
+
+        }
+
+        
+
+        intentt[intentId].isExecuted = true;
+        intentFee[intentId] = 0;
+        return this.afterAddLiquidity.selector;
+    }
+
+     function afterRemoveLiquidity(
+        address sender,
+        PoolKey calldata key,
+        ModifyLiquidityParams calldata params,
+        BalanceDelta delta,
+        BalanceDelta feesAccrued,
+        bytes calldata hookData
+    ) external returns (bytes4, BalanceDelta) {
+
+         require(msg.sender == poolManager);
+        (address executerAddress, address LPAddress, uint256 intentId) = abi.decode(hookData,(address, address, uint256));
+        LiquidityIntent storage intentt = intent[intentId];
+
+        require(intentt.isExecuted == false);
+        address token0 = delta;
+        address token1 = feesAccrued;
+
+        if (token1 < 0) {
+            token1 = 
+        }
+
+        if (token0 > 0) {
+
+        }
+
+        
+        intentt[intentId].isExecuted = true;
+        intentFee[intentId] = 0;
+
+        return this.afterRemoveLiquidity.selector;
+
+    }
+
+
+
 }
