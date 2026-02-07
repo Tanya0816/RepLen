@@ -39,6 +39,7 @@ func createIntentHandler(w http.ResponseWriter, r *http.Request) {    // post /i
 		Action    string  `json:"action"`
 		Amount    float64 `json:"amount"`
 		DelaySec  int     `json:"delay_sec"`
+		SignedBy  string  `json:"signed_by"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -54,6 +55,7 @@ func createIntentHandler(w http.ResponseWriter, r *http.Request) {    // post /i
 		PoolID:    req.PoolID,
 		Action:    intent.ActionType(req.Action),
 		Amount:    req.Amount,
+		SignedBy:  req.SignedBy,
 		Status:    intent.StatusPending,
 		CreatedAt: now,
 		ExecuteAt: now.Add(time.Duration(req.DelaySec) * time.Second),  // set execute time based on delay
