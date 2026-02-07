@@ -10,27 +10,39 @@ func(s *IntentStore) StartExecutor() {   // This function starts a background go
 	ticker := time.NewTicker(5 * time.Second)
 	go func() {
 		for range ticker.C {
-			log.Println("Executing intents...")
+			//log.Println("Executing intents...")
 			s.executeReadyIntents()
 		}
 	}()
 }
 //scan filter and execute
-func (s *IntentStore) executeReadyIntents() {   //This part says "Do not reveal your secrets to strangers" but in code form
+func (s *IntentStore) executeReadyIntents() {
 	s.mu.Lock()
-	defer s.mu.Unlock()      //Lock your doors!!
+	defer s.mu.Unlock()
 	now := time.Now()
+	readyCount := 0
 	for id, intent := range s.intents {
-		if intent.Status!="PENDING" {
-			continue             // Savdhan rhe, Satark rhe (This is matter of safety!!)
+		if intent.Status != "PENDING" {
+			continue
 		}
-		if intent.ExecuteAt.Before(now) || intent.ExecuteAt.Equal(now) {  //delaybased privay check
-			log.Printf("Executing intent ID: %s, Action: %s, Amount: %f\n", intent.ID, intent.Action, intent.Amount) //simulated execution by logging
-			executedTime := time.Now()  // Updated intent status and executed time
+		if intent.ExecuteAt.Before(now) || intent.ExecuteAt.Equal(now) {
+			readyCount++
+
+			log.Printf(
+				"[EXECUTOR] Executing intent ID=%s Action=%s Amount=%f",
+				intent.ID,
+				intent.Action,
+				intent.Amount,
+			)
+
+			executedTime := time.Now()
 			intent.Status = "EXECUTED"
-			s.lastCheckedAt = time.Now()
 			intent.ExecutedAt = &executedTime
-			s.intents[id] = intent       //Its the matter of figure☆*: .｡. o(≧▽≦), I mean values update in the store.
+			s.lastCheckedAt = time.Now()
+			s.intents[id] = intent
 		}
+	}
+	if readyCount > 0 {
+		log.Printf("[EXECUTOR] %d intent(s) executed in this cycle", readyCount)
 	}
 }
