@@ -2,20 +2,27 @@ package store
 
 import (
 	"sync"
-
-	"RepLen-backend/internal/intent"
+	"time"
+	"github.com/Tanya0816/RepLen/RepLen-backend/internal/intent"
 )
 
 type IntentStore struct {
 	mu      sync.Mutex
 	intents map[string]intent.LenIntent
+	executorRunning bool
+	lastCheckedAt time.Time
+	tickInterval    time.Duration
+
 }
 
 func NewIntentStore() *IntentStore {
 	return &IntentStore{
-		intents: make(map[string]intent.LenIntent),
+		intents:         make(map[string]intent.LenIntent),
+		executorRunning: false,
+		tickInterval:    5 * time.Second,
 	}
 }
+
 
 func (s *IntentStore) Add(i intent.LenIntent) {
 	s.mu.Lock()
@@ -34,3 +41,29 @@ func (s *IntentStore) GetAll() []intent.LenIntent {
 	}
 	return result
 }
+
+func (s *IntentStore) ExecutorStatus() map[string]interface{} {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	pending := 0
+	executed := 0
+
+	for _, i := range s.intents {
+		if i.Status == "PENDING" {
+			pending++
+		}
+		if i.Status == "EXECUTED" {
+			executed++
+		}
+	}
+
+	return map[string]interface{}{
+		"running":                 s.executorRunning,
+		"tick_interval_seconds":   int(s.tickInterval.Seconds()),
+		"pending_intents":         pending,
+		"executed_intents":        executed,
+		"last_checked_at":         s.lastCheckedAt,
+	}
+}
+
