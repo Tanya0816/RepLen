@@ -16,6 +16,7 @@ contract LPPrivacy is IHooks{
     constructor(IPoolManager manager, uint256 delay, uint256  grace) {
         require(address(manager) != address(0), "Bad manager");
         require(delay > 0, "Bad delay");
+        require(grace > 0, "Bad grace period");
 
         poolManager = manager;
         delay_block = delay;
@@ -282,7 +283,7 @@ contract LPPrivacy is IHooks{
 
         uint256 fee = intentFee[intentId];
         require(fee > 0);
-        
+
         intentFee[intentId] = 0;
         i.isCancelled = true;
         (bool ok, ) = i.lp.call{value: fee}("");
