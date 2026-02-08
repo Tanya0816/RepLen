@@ -12,6 +12,8 @@ contract LPPrivacy is IHooks{
     uint256 public delay_block;
     uint256 public gracePeriod;
 
+    constructor(manager, delay, grace);
+
     event queuedIntent(uint256);
     event executedIntent(uint256);
 
@@ -92,14 +94,16 @@ contract LPPrivacy is IHooks{
     }
 
     function queueIntentFee(uint256 fees, uint256 intentId) public payable  {
+        require(intentId < intentid);
         require(msg.sender == intent[intentId].lp);
         require(msg.value >= fees);
         intentFee[intentId] = fees;
 
     }
 
-    function executeIntent(uint256 intentId, uint Fees) public {
-        require(!intent[id].isCancelled);
+    function executeIntent(uint256 intentId) public {
+        require(!intent[intentId].isCancelled);
+        require(intentFee[intentId] > 0);
 
         if (intentId >= intentid) {
             revert();
@@ -158,6 +162,7 @@ contract LPPrivacy is IHooks{
         LiquidityIntent storage intentt = intent[intentId];
 
         require(!intentt.isExecuted);
+        require(intentId < intentid);
         uint256 fees = intentFee[intentId];
         intentFee[intentId] = 0;
         rewards[executerAddress] += fees;
@@ -204,6 +209,8 @@ contract LPPrivacy is IHooks{
         (address executerAddress, address LPAddress, uint256 intentId) = abi.decode(hookData,(address, address, uint256));
         LiquidityIntent storage intentt = intent[intentId];
 
+        require(intentId < intentid);
+
         require(!intentt.isExecuted);
         uint256 fees = intentFee[intentId];
         intentFee[intentId] = 0;
@@ -237,31 +244,46 @@ contract LPPrivacy is IHooks{
 
     }
 
-    function withdraw(uint256 amount, address account) external payable {
+    function withdraw(uint256 amount) external payable {
         amount = rewards[msg.sender];
         require(amount > 0);
         rewards[msg.sender] = 0;
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "ETH transfer failed");
 
     }
 
     function refundAfterExpiry(uint256 id) external payable returns(uint256) {
-        require(block.number <= intent[id].expiryBlock);
-        require(!intent[id].isExecuted);
-        require(!intent[id].isCancelled);
+        require(id < intentid);
+        LiquidityIntent storage i = intent[id];
+        require(block.number > intent[id].expiryBlock);
+        require(!i.isExecuted);
+        require(!i.isCancelled);
         uint256 fee = intentFee[id];
-        intent[id] = 0;
-        poolManager.settle(fee);
-
+        require(fee > 0);
+        intentFee[id] = 0;
+        intent[id].isCancelled = true;
+        (bool ok, ) = i.lp.call{value: fee}("");
+        require(ok, "Refund failed");
 
     }
 
     function cancelIntent(uint256 id) {
         require(id < intentid);
-        require(msg.sender == intent[id].lp);
-        require(!intent[id].isExecuted);
-        require(!intent[id].isCancelled);
-        intent[id].isCancelled = true;
+        LiquidityIntent storage i =  intent[id];
+        require(msg.sender == i.lp);
+        require(!i.isExecuted);
+        require(!i.isCancelled);
 
+        uint256 fee = intentFee[id];
+        i.isCancelled = true;
+        intentFee[id] = 0;
+
+        if ( fee > 0) {
+            (bool ok, ) = i.lp.call{value: fee}("");
+            require(ok, "Regund failed");
+        }
     }
+    receive() external payable {}
 
 }
