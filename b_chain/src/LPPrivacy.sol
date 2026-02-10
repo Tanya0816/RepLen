@@ -5,8 +5,12 @@ pragma solidity ^0.8.10;
 import "@V4-Core/src/interfaces/IHooks.sol";
 import "@V4-Core/src/interfaces/IPoolManager.sol";
 import "@V4-Core/src/libraries/Hooks.sol";
+import {Currency, CurrencyLibrary} from  "@V4-Core/src/types/Currency.sol";
+import {PoolKey} from "@V4-Core/src/types/PoolKey.sol";
+
 
 contract LPPrivacy is IHooks {
+    using CurrencyLibrary for Currency;
     IPoolManager public poolManager;
 
     uint256 public delay_block;
@@ -63,6 +67,21 @@ contract LPPrivacy is IHooks {
         require(intentId < intentid, "Invalid intent");
         _;
     }
+
+    function beforeInitialize(
+        address sender, 
+        PoolKey calldata key, 
+        uint160 sqrtPriceX96
+        ) external returns (bytes4);
+
+        function afterInitialize(
+            address sender, 
+            PoolKey calldata key, 
+            uint160 sqrtPriceX96, 
+            int24 tick)
+        external
+        returns (bytes4);
+
 
     function beforeAddLiquidity(
         address sender,
@@ -192,8 +211,8 @@ contract LPPrivacy is IHooks {
         rewards[executerAddress] += fees;
         intentt.isExecuted = true;
 
-        address token0 = key.currency0;
-        address token1 = key.currency1;
+        address token0 = Currency.unwrap(key.currency0);
+        address token1 = Currency.unwrap(key.currency1);
 
         int256 a0 = delta.amount0();
         int256 a1 = delta.amount1();
@@ -239,8 +258,8 @@ contract LPPrivacy is IHooks {
         rewards[executerAddress] += fees;
         intentt.isExecuted = true;
 
-        address token0 = key.currency0;
-        address token1 = key.currency1;
+        address token0 = Currency.unwrap(key.currency0);
+        address token1 = Currency.unwrap(key.currency1);
 
         int256 a0 = delta.amount0();
         int256 a1 = delta.amount1();
@@ -312,7 +331,6 @@ contract LPPrivacy is IHooks {
     function getHookPermissions()
         external
         pure
-        override
         returns (Hooks.Permissions memory)
     {
         return
@@ -330,61 +348,38 @@ contract LPPrivacy is IHooks {
             });
     }
 
-    function beforeInitialize(
-    address,
-    PoolKey calldata,
-    uint160
-) external pure override returns (bytes4) {
-    return this.beforeInitialize.selector;
-}
+    function beforeSwap(
+        address sender, 
+        PoolKey calldata key, 
+        SwapParams calldata params, 
+        bytes calldata hookData)
+        external
+        returns (bytes4, BeforeSwapDelta, uint24);
 
-function afterInitialize(
-    address,
-    PoolKey calldata,
-    uint160,
-    int24
-) external pure override returns (bytes4) {
-    return this.afterInitialize.selector;
-}
+        function afterSwap(
+        address sender,
+        PoolKey calldata key,
+        SwapParams calldata params,
+        BalanceDelta delta,
+        bytes calldata hookData
+    ) external returns (bytes4, int128);
 
-function beforeSwap(
-    address,
-    PoolKey calldata,
-    IPoolManager.SwapParams calldata,
-    bytes calldata
-) external pure override returns (bytes4) {
-    return this.beforeSwap.selector;
-}
+    function beforeDonate(
+        address sender,
+        PoolKey calldata key,
+        uint256 amount0,
+        uint256 amount1,
+        bytes calldata hookData
+    ) external returns (bytes4);
 
-function afterSwap(
-    address,
-    PoolKey calldata,
-    IPoolManager.SwapParams calldata,
-    BalanceDelta,
-    bytes calldata
-) external pure override returns (bytes4) {
-    return this.afterSwap.selector;
-}
+      function afterDonate(
+        address sender,
+        PoolKey calldata key,
+        uint256 amount0,
+        uint256 amount1,
+        bytes calldata hookData
+    ) external returns (bytes4);
 
-function beforeDonate(
-    address,
-    PoolKey calldata,
-    uint256,
-    uint256,
-    bytes calldata
-) external pure override returns (bytes4) {
-    return this.beforeDonate.selector;
-}
-
-function afterDonate(
-    address,
-    PoolKey calldata,
-    uint256,
-    uint256,
-    bytes calldata
-) external pure override returns (bytes4) {
-    return this.afterDonate.selector;
-}
 
 receive() external payable {}
 }
