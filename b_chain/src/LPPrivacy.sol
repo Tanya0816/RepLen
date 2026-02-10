@@ -7,6 +7,8 @@ import "@V4-Core/src/interfaces/IPoolManager.sol";
 import "@V4-Core/src/libraries/Hooks.sol";
 import {Currency, CurrencyLibrary} from  "@V4-Core/src/types/Currency.sol";
 import {PoolKey} from "@V4-Core/src/types/PoolKey.sol";
+import "@V4-Core/src/types/BeforeSwapDelta.sol";
+import "@V4-Core/src/types/BalanceDelta.sol";
 
 
 contract LPPrivacy is IHooks {
@@ -351,18 +353,22 @@ contract LPPrivacy is IHooks {
     function beforeSwap(
         address sender, 
         PoolKey calldata key, 
-        SwapParams calldata params, 
+        IPoolManager.SwapParams calldata params, 
         bytes calldata hookData)
         external
-        returns (bytes4, BeforeSwapDelta, uint24);
+        returns (bytes4, BeforeSwapDelta, uint24) {
+            return (this.beforeSwap.selector,BeforeSwapDelta.wrap(0),0);
+        }
 
         function afterSwap(
         address sender,
         PoolKey calldata key,
-        SwapParams calldata params,
+        IPoolManager.SwapParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
-    ) external returns (bytes4, int128);
+    ) external returns (bytes4, int128) {
+        return (this.afterSwap.selector,0);
+    }
 
     function beforeDonate(
         address sender,
@@ -370,7 +376,9 @@ contract LPPrivacy is IHooks {
         uint256 amount0,
         uint256 amount1,
         bytes calldata hookData
-    ) external returns (bytes4);
+    ) external returns (bytes4){
+        return this.beforeDonate.selector;
+    }
 
       function afterDonate(
         address sender,
@@ -378,7 +386,9 @@ contract LPPrivacy is IHooks {
         uint256 amount0,
         uint256 amount1,
         bytes calldata hookData
-    ) external returns (bytes4);
+    ) external returns (bytes4) {
+        return this.afterDonate.selector;
+    }
 
 
 receive() external payable {}
