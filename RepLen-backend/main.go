@@ -8,13 +8,21 @@ import (
 "time"
 "github.com/Tanya0816/RepLen/RepLen-backend/internal/store"
 "github.com/Tanya0816/RepLen/RepLen-backend/internal/intent"
+<<<<<<< HEAD
 "github.com/Tanya0816/RepLen/RepLen-backend/internal/chainexecution"
+"math/big"
+"os"
+=======
+//"github.com/Tanya0816/RepLen/RepLen-backend/internal/chainexecution"
+>>>>>>> 0c328719b8b6817c30e98c0027c6f8795b9d3534
 )
 var intentStore *store.IntentStore
+var chainExecutor chainexecution.ChainExecutor
 func main() {
-	ethExec := &chainexecution.EthExecutor{}
+	
+	//ethExec := &chainexecution.EthExecutor{}
 	intentStore = store.NewIntentStore()
-	intentStore.SetChainExecutor(ethExec)
+	//intentStore.SetChainExecutor(ethExec)
 	http.HandleFunc("/health",healthHandler)
     http.HandleFunc("/intent", createIntentHandler)    // POST /intent
     http.HandleFunc("/intents", listIntentsHandler)  // GET /intents
