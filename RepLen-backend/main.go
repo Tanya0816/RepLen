@@ -8,18 +8,27 @@ import (
 "time"
 "github.com/Tanya0816/RepLen/RepLen-backend/internal/store"
 "github.com/Tanya0816/RepLen/RepLen-backend/internal/intent"
+<<<<<<< HEAD
 "github.com/Tanya0816/RepLen/RepLen-backend/internal/chainexecution"
 "math/big"
 "os"
+=======
+//"github.com/Tanya0816/RepLen/RepLen-backend/internal/chainexecution"
+>>>>>>> 0c328719b8b6817c30e98c0027c6f8795b9d3534
 )
 var intentStore *store.IntentStore
 var chainExecutor chainexecution.ChainExecutor
 func main() {
+	
+	//ethExec := &chainexecution.EthExecutor{}
 	intentStore = store.NewIntentStore()
+	//intentStore.SetChainExecutor(ethExec)
 	http.HandleFunc("/health",healthHandler)
     http.HandleFunc("/intent", createIntentHandler)    // POST /intent
     http.HandleFunc("/intents", listIntentsHandler)  // GET /intents
-
+	http.HandleFunc("/executor/status", executorStatusHandler)
+    http.HandleFunc("/intents/ready", readyIntentsHandler)
+	intentStore.StartExecutor() // Start the background executor to process intents
 	log.Println("Server is running on port 3000") 
 	log.Fatal(http.ListenAndServe(":3000", nil))
 }
@@ -40,6 +49,7 @@ func createIntentHandler(w http.ResponseWriter, r *http.Request) {    // post /i
 		Action    string  `json:"action"`
 		Amount    float64 `json:"amount"`
 		DelaySec  int     `json:"delay_sec"`
+		SignedBy  string  `json:"signed_by"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -55,8 +65,10 @@ func createIntentHandler(w http.ResponseWriter, r *http.Request) {    // post /i
 		PoolID:    req.PoolID,
 		Action:    intent.ActionType(req.Action),
 		Amount:    req.Amount,
+		SignedBy:  req.SignedBy,
+		Status:    intent.StatusPending,
 		CreatedAt: now,
-		ExecutedAt: now.Add(time.Duration(req.DelaySec) * time.Second),
+		ExecuteAt: now.Add(time.Duration(req.DelaySec) * time.Second),  // set execute time based on delay
 	}
 
 	intentStore.Add(i)
@@ -72,4 +84,24 @@ func listIntentsHandler(w http.ResponseWriter, r *http.Request) {   // GET /inte
 
 	intents := intentStore.GetAll()
 	json.NewEncoder(w).Encode(intents)
+}
+
+func executorStatusHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	status := intentStore.ExecutorStatus()
+	json.NewEncoder(w).Encode(status)
+}
+
+func readyIntentsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	ready := intentStore.GetReadyIntents()
+	json.NewEncoder(w).Encode(ready)
 }

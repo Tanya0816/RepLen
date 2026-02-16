@@ -1,0 +1,10 @@
+# files 
+.env
+
+/.pnp
+.pnp.js
+
+/coverage
+
+/.json
+.json

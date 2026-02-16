@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RepLen - Liquidity Provider Privacy Shield</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="logo">RepLen</div>
+        <button class="wallet-btn" id="walletBtn" onclick="connectWallet()">
+            <span id="walletText">Connect Wallet</span>
+        </button>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <p class="hero-tagline">
+            Reduce information leakage from liquidity provider actions using Uniswap v4 Hooks.
+        </p>
+        
+        <div class="hook-badge">
+            Uniswap V4 Hook
+        </div>
+
+        <div class="quote-box">
+            <p class="quote-text">
+                We don't hide liquidity — we make liquidity less exploitable.
+            </p>
+        </div>
+    </section>
+
+    <!-- CTA Buttons -->
+    <section class="cta-section">
+        <div class="cta-container">
+            <button class="cta-btn cta-primary" onclick="scrollToSection('problem')">
+                Understand the Problem →
+            </button>
+            <button class="cta-btn cta-secondary" onclick="scrollToSection('demo')">
+                View Demo
+            </button>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🔒</span>
+                <h3 class="feature-title">Secure Contracts</h3>
+                <p class="feature-desc">Battle-tested smart contracts protecting your liquidity positions</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">⚡</span>
+                <h3 class="feature-title">Fast Execution</h3>
+                <p class="feature-desc">Optimized for minimal gas costs and maximum efficiency</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🌐</span>
+                <h3 class="feature-title">Decentralized</h3>
+                <p class="feature-desc">Fully on-chain with no trusted intermediaries</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="problem-section" id="problem">
+        <div class="section-container">
+            <h2 class="section-title">The Problem with Current LP Positions</h2>
+            <p class="section-subtitle">LPs leak valuable information that gets exploited by MEV bots</p>
+            
+            <div class="problem-cards">
+                <div class="problem-card">
+                    <div class="problem-icon">⚠️</div>
+                    <h3 class="problem-title">Information Leakage</h3>
+                    <p class="problem-desc">
+                        When LPs add, remove, or rebalance liquidity, this information is immediately visible on-chain, 
+                        signaling their strategy and timing to sophisticated actors.
+                    </p>
+                </div>
+                
+                <div class="problem-card">
+                    <div class="problem-icon">🤖</div>
+                    <h3 class="problem-title">MEV Exploitation</h3>
+                    <p class="problem-desc">
+                        Bots analyze LP movements to front-run trades, extract value, and profit from adverse selection 
+                        before LPs can earn their fair share of fees.
+                    </p>
+                </div>
+                
+                <div class="problem-card">
+                    <div class="problem-icon">📉</div>
+                    <h3 class="problem-title">Reduced Returns</h3>
+                    <p class="problem-desc">
+                        LPs suffer lower returns compared to expectations due to timing exploitation, 
+                        making passive liquidity provision less attractive and profitable.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Demo Section -->
+    <section class="interactive-demo" id="demo">
+        <div class="section-container">
+            <div class="demo-badge">SIMULATION MODE</div>
+            <h2 class="section-title">Interactive Demo</h2>
+            <p class="section-subtitle">Visualize how delayed and smoothed execution reduces information leakage</p>
+            
+            <div class="demo-grid-2col">
+                <!-- Configuration Panel -->
+                <div class="config-panel">
+                    <h3 class="panel-title">Configuration</h3>
+                    
+                    <div class="config-section">
+                        <label class="config-label">Action Type</label>
+                        <div class="action-buttons-grid">
+                            <button class="action-type-btn active" data-action="ADD_LIQUIDITY" onclick="setActionType('ADD_LIQUIDITY')">
+                                ADD<br/>LIQUIDITY
+                            </button>
+                            <button class="action-type-btn" data-action="REMOVE_LIQUIDITY" onclick="setActionType('REMOVE_LIQUIDITY')">
+                                REMOVE<br/>LIQUIDITY
+                            </button>
+                            <button class="action-type-btn" data-action="REBALANCE" onclick="setActionType('REBALANCE')">
+                                REBALANCE
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="config-section">
+                        <label class="config-label">
+                            Liquidity Amount: <span class="value-display" id="amountDisplay">$10,000</span>
+                        </label>
+                        <input type="range" class="range-slider" id="amountSlider" 
+                               min="1000" max="100000" step="1000" value="10000"
+                               oninput="updateAmount(this.value)">
+                    </div>
+                    
+                    <div class="config-section">
+                        <label class="config-label">
+                            Delay (blocks): <span class="value-display" id="delayDisplay">5</span>
+                        </label>
+                        <input type="range" class="range-slider" id="delaySlider"
+                               min="1" max="20" value="5"
+                               oninput="updateDelay(this.value)">
+                    </div>
+                    
+                    <div class="config-section">
+                        <label class="config-label">
+                            Smoothing Steps: <span class="value-display" id="stepsDisplay">10</span>
+                        </label>
+                        <input type="range" class="range-slider" id="stepsSlider"
+                               min="1" max="20" value="10"
+                               oninput="updateSteps(this.value)">
+                    </div>
+                    
+                    <div class="control-buttons">
+                        <button class="sim-btn sim-btn-primary" id="runBtn" onclick="runSimulation()">
+                            Run Simulation
+                        </button>
+                        <button class="sim-btn sim-btn-secondary" onclick="resetSimulation()">
+                            Reset
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Execution Timeline Panel -->
+                <div class="timeline-panel">
+                    <h3 class="panel-title">Execution Timeline</h3>
+                    
+                    <div class="timeline-section">
+                        <div class="timeline-header">
+                            <span>Current Block</span>
+                            <span class="block-number" id="currentBlock">0</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-box active-stat">
+                            <div class="stat-label">Active Liquidity</div>
+                            <div class="stat-value" id="activeLiquidity">$0</div>
+                            <div class="stat-percent" id="activePercent">0% activated</div>
+                        </div>
+                        <div class="stat-box buffered-stat">
+                            <div class="stat-label">Buffered</div>
+                            <div class="stat-value buffered" id="bufferedLiquidity">$10,000</div>
+                            <div class="stat-percent" id="bufferedPercent">100% pending</div>
+                        </div>
+                    </div>
+                    
+                    <div class="phase-indicator">
+                        <div class="phase-label">Execution Phase</div>
+                        <div class="phase-status" id="phaseStatus">
+                            ⏸ Intent Registered
+                        </div>
+                    </div>
+                    
+                    <div class="info-leak-box">
+                        <div class="info-leak-title">Information Leakage Reduction</div>
+                        <div class="info-leak-desc" id="leakageInfo">
+                            15 blocks of obfuscation reduce exploitability compared to instant execution
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="simulation-notice">
+                ⚠️ SIMULATION ONLY — No real funds or transactions
+            </div>
+        </div>
+    </section>
+
+    <!-- How Shield Works Section -->
+    <section class="shield-works">
+        <div class="section-container">
+            <h2 class="section-title">How the Shield Works</h2>
+            <p class="section-subtitle">Three mechanisms to reduce information leakage</p>
+            
+            <div class="mechanism-tabs">
+                <button class="tab-btn active" onclick="switchTab('delayed')">
+                    ⏱️ Time-Delayed Activation
+                </button>
+                <button class="tab-btn" onclick="switchTab('smoothing')">
+                    📊 Gradual Smoothing
+                </button>
+                <button class="tab-btn" onclick="switchTab('batching')">
+                    📦 Batched Updates
+                </button>
+            </div>
+            
+            <!-- Time-Delayed Tab -->
+            <div class="tab-content active" id="delayed">
+                <div class="mechanism-detail">
+                    <div class="detail-header">
+                        <h3>⏱️ Time-Delayed Activation</h3>
+                        <code class="code-badge">afterAddLiquidity()</code>
+                    </div>
+                    
+                    <div class="detail-body-full">
+                        <div class="detail-text">
+                            <h4>How it works:</h4>
+                            <ol class="detail-list">
+                                <li>LP submits add/remove liquidity request</li>
+                                <li>Hook intercepts and registers intent</li>
+                                <li>Liquidity becomes active after N blocks (e.g., 20 blocks)</li>
+                                <li>Pool state doesn't change immediately</li>
+                            </ol>
+                            
+                            <h4>Why it helps:</h4>
+                            <ul class="detail-list">
+                                <li>Prevents instant bot reaction to LP moves</li>
+                                <li>Reduces timing signal exploitation</li>
+                                <li>Makes front-running less profitable</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gradual Smoothing Tab -->
+            <div class="tab-content" id="smoothing">
+                <div class="mechanism-detail">
+                    <div class="detail-header">
+                        <h3>📊 Gradual Liquidity Smoothing</h3>
+                        <code class="code-badge">beforeSwap()</code>
+                    </div>
+                    
+                    <div class="detail-body-full">
+                        <div class="detail-text">
+                            <h4>How it works:</h4>
+                            <ol class="detail-list">
+                                <li>Large liquidity changes split into increments</li>
+                                <li>Applied gradually over multiple blocks</li>
+                                <li>Example: 100k liquidity → 20k per 5 blocks</li>
+                                <li>Smooths pool state changes</li>
+                            </ol>
+                            
+                            <h4>Why it helps:</h4>
+                            <ul class="detail-list">
+                                <li>Avoids sharp pool-state signals</li>
+                                <li>Reduces single-point exploitation</li>
+                                <li>Makes LP strategy harder to infer</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Batched Updates Tab -->
+            <div class="tab-content" id="batching">
+                <div class="mechanism-detail">
+                    <div class="detail-header">
+                        <h3>📦 Batched LP Updates</h3>
+                        <code class="code-badge">executeBatch()</code>
+                    </div>
+                    
+                    <div class="detail-body">
+                        <div class="detail-text">
+                            <h4>How it works:</h4>
+                            <ol class="detail-list">
+                                <li>Multiple LP actions grouped together</li>
+                                <li>Executed simultaneously in one block</li>
+                                <li>Individual strategies mixed with others</li>
+                                <li>Net effect visible, not individual moves</li>
+                            </ol>
+                            
+                            <h4>Why it helps:</h4>
+                            <ul class="detail-list">
+                                <li>Individual LP strategies harder to isolate</li>
+                                <li>Gas efficient (amortized costs)</li>
+                                <li>Adds noise to information signal</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="detail-text">
+                            <h4>Benefits:</h4>
+                            <ul class="detail-list">
+                                <li>Reduced per-transaction cost</li>
+                                <li>Enhanced privacy through batching</li>
+                                <li>More efficient execution</li>
+                                <li>Better MEV protection</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LP Manager -->
+    <section class="lp-manager">
+        <h2 class="manager-title">Liquidity Manager</h2>
+        
+        <div class="action-buttons">
+            <button class="action-btn active" onclick="setAction('add')">
+                Add Liquidity
+            </button>
+            <button class="action-btn" onclick="setAction('remove')">
+                Remove Liquidity
+            </button>
+            <button class="action-btn" onclick="setAction('rebalance')">
+                Rebalance Liquidity
+            </button>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label" for="tokenA">Token A</label>
+            <input type="text" id="tokenA" class="input-field" placeholder="Enter token address or symbol">
+        </div>
+
+        <div class="input-group">
+            <label class="input-label" for="tokenB">Token B</label>
+            <input type="text" id="tokenB" class="input-field" placeholder="Enter token address or symbol">
+        </div>
+
+        <div class="input-group">
+            <label class="input-label" for="amount">Amount</label>
+            <input type="number" id="amount" class="input-field" placeholder="Enter liquidity amount">
+        </div>
+
+        <button class="submit-btn" onclick="submitIntent()">
+            <span id="submitText">Submit Intent</span>
+            <div class="loading hidden" id="submitLoading"></div>
+        </button>
+    </section>
+
+    <!-- Privacy Mechanisms -->
+    <section class="mechanisms">
+        <h2 class="mechanisms-title">Privacy Mechanisms</h2>
+        
+        <div class="mechanism-card">
+            <div class="mechanism-header">
+                <span>🛡️</span>
+                Time-Delayed Activation
+            </div>
+            <p class="mechanism-desc">
+                Liquidity becomes active after N blocks, preventing bots from reacting instantly to your strategy changes.
+            </p>
+        </div>
+
+        <div class="mechanism-card">
+            <div class="mechanism-header">
+                <span>🛡️</span>
+                Gradual Liquidity Smoothing
+            </div>
+            <p class="mechanism-desc">
+                Liquidity is applied in small increments over time, avoiding sharp pool-state signals that can be exploited.
+            </p>
+        </div>
+
+        <div class="mechanism-card">
+            <div class="mechanism-header">
+                <span>🛡️</span>
+                Batched LP Updates
+            </div>
+            <p class="mechanism-desc">
+                Multiple LP changes are applied together, making individual strategies harder to infer and exploit.
+            </p>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats-container">
+        <div class="stat-card">
+            <div class="stat-value" id="totalLiquidity">$0</div>
+            <div class="stat-label">Total Protected Liquidity</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="activeHooks">0</div>
+            <div class="stat-label">Active Hooks</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="savedFromMEV">$0</div>
+            <div class="stat-label">Saved from MEV</div>
+        </div>
+    </section>
+
+    <!-- Wallet Connection Modal -->
+    <div class="modal-overlay" id="walletModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Connect Wallet</h3>
+                <button class="modal-close" onclick="closeWalletModal()">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <p class="modal-subtitle">Choose how you want to connect</p>
+                
+                <div class="wallet-options">
+                    <button class="wallet-option" onclick="connectMetaMask()">
+                        <div class="wallet-info">
+                            <img src="data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M36.0112 3L21.9944 13.6744L24.6479 7.39063L36.0112 3Z' fill='%23E17726'/%3E%3Cpath d='M4.00562 3L18.0225 13.6744L15.369 7.39063L4.00562 3Z' fill='%23E27625'/%3E%3Cpath d='M30.9876 27.0887L27.2258 32.8941L35.2933 35.1781L37.7102 27.2456L30.9876 27.0887Z' fill='%23E27625'/%3E%3Cpath d='M2.30679 27.2456L4.70696 35.1781L12.7745 32.8941L9.01271 27.0887L2.30679 27.2456Z' fill='%23E27625'/%3E%3Cpath d='M12.3707 17.6944L10.0269 21.5056L18.0562 21.8819L17.775 13.1744L12.3707 17.6944Z' fill='%23E27625'/%3E%3Cpath d='M27.6293 17.6944L22.225 13.1744L21.9438 21.8819L29.9731 21.5056L27.6293 17.6944Z' fill='%23E27625'/%3E%3Cpath d='M12.7745 32.8941L17.5187 30.5694L13.3682 27.2994L12.7745 32.8941Z' fill='%23E27625'/%3E%3Cpath d='M22.4813 30.5694L27.2255 32.8941L26.6318 27.2994L22.4813 30.5694Z' fill='%23E27625'/%3E%3C/svg%3E" alt="MetaMask" class="wallet-icon">
+                            <div class="wallet-details">
+                                <span class="wallet-name">MetaMask</span>
+                                <span class="wallet-desc">Connect using browser wallet</span>
+                            </div>
+                        </div>
+                        <span class="wallet-arrow">→</span>
+                    </button>
+                    
+                    <button class="wallet-option" onclick="connectWalletConnect()">
+                        <div class="wallet-info">
+                            <img src="data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11.875 15.625C16.2242 11.2758 23.2758 11.2758 27.625 15.625L28.25 16.25C28.4688 16.4688 28.4688 16.8125 28.25 17.0312L26.5312 18.75C26.4219 18.8594 26.2344 18.8594 26.125 18.75L25.1875 17.8125C22.2188 14.8438 17.2812 14.8438 14.3125 17.8125L13.2812 18.8438C13.1719 18.9531 12.9844 18.9531 12.875 18.8438L11.1562 17.125C10.9375 16.9062 10.9375 16.5625 11.1562 16.3438L11.875 15.625ZM31.125 19.6875L32.6562 21.2188C32.875 21.4375 32.875 21.7812 32.6562 22L25.9375 28.7188C25.7188 28.9375 25.375 28.9375 25.1562 28.7188L19.9062 23.4688C19.8516 23.4141 19.7422 23.4141 19.6875 23.4688L14.4375 28.7188C14.2188 28.9375 13.875 28.9375 13.6562 28.7188L6.9375 22C6.71875 21.7812 6.71875 21.4375 6.9375 21.2188L8.46875 19.6875C8.6875 19.4688 9.03125 19.4688 9.25 19.6875L14.5 24.9375C14.5547 24.9922 14.6641 24.9922 14.7188 24.9375L19.9688 19.6875C20.1875 19.4688 20.5312 19.4688 20.75 19.6875L26 24.9375C26.0547 24.9922 26.1641 24.9922 26.2188 24.9375L31.4688 19.6875C31.6875 19.4688 32.0312 19.4688 32.25 19.6875L31.125 19.6875Z' fill='%233B99FC'/%3E%3C/svg%3E" alt="WalletConnect" class="wallet-icon">
+                            <div class="wallet-details">
+                                <span class="wallet-name">WalletConnect</span>
+                                <span class="wallet-desc">Connect using mobile wallet</span>
+                            </div>
+                        </div>
+                        <span class="wallet-arrow">→</span>
+                    </button>
+                    
+                    <button class="wallet-option" onclick="connectCoinbase()">
+                        <div class="wallet-info">
+                            <img src="data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='18' fill='%230052FF'/%3E%3Cpath d='M20 12C15.5817 12 12 15.5817 12 20C12 24.4183 15.5817 28 20 28C24.4183 28 28 24.4183 28 20C28 15.5817 24.4183 12 20 12ZM22.5 21.5H21.5V22.5C21.5 23.3284 20.8284 24 20 24C19.1716 24 18.5 23.3284 18.5 22.5V21.5H17.5C16.6716 21.5 16 20.8284 16 20C16 19.1716 16.6716 18.5 17.5 18.5H18.5V17.5C18.5 16.6716 19.1716 16 20 16C20.8284 16 21.5 16.6716 21.5 17.5V18.5H22.5C23.3284 18.5 24 19.1716 24 20C24 20.8284 23.3284 21.5 22.5 21.5Z' fill='white'/%3E%3C/svg%3E" alt="Coinbase" class="wallet-icon">
+                            <div class="wallet-details">
+                                <span class="wallet-name">Coinbase Wallet</span>
+                                <span class="wallet-desc">Connect using Coinbase</span>
+                            </div>
+                        </div>
+                        <span class="wallet-arrow">→</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
